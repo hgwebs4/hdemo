@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linux & Tech In Hindi - Live Editable Banner Studio</title>
+
+  <!-- Google Web Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&family=Plus+Jakarta+Sans:wght@800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- JSZip -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #030712;
+      color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 30px 16px;
+    }
+    .main-container {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .preview-box {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), 0 0 40px rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #020617;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-box svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .panel {
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .input-row label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+    .input-row input {
+      flex: 1;
+      background: #030712;
+      border: 1px solid #334155;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: #10b981;
+      font-size: 14px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-row input:focus {
+      border-color: #10b981;
+    }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      width: 100%;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.15s ease, filter 0.15s ease, background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    button:active {
+      transform: scale(0.97);
+    }
+    .btn-png {
+      background: #0f172a;
+      color: #38bdf8;
+      border: 1px solid #0284c7;
+    }
+    .btn-png:hover {
+      background: #0284c7;
+      color: #fff;
+    }
+    .btn-svg {
+      background: #0f172a;
+      color: #10b981;
+      border: 1px solid #059669;
+    }
+    .btn-svg:hover {
+      background: #059669;
+      color: #fff;
+    }
+    .btn-zip {
+      background: linear-gradient(135deg, #10b981 0%, #0284c7 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
+    }
+    .btn-zip:hover {
+      filter: brightness(1.1);
+    }
+    .btn-update {
+      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+    }
+    .btn-update:hover {
+      filter: brightness(1.15);
+    }
+    .btn-copy {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+    .btn-copy:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .code-header h3 {
+      font-size: 15px;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+      border-radius: 6px;
+      font-weight: 700;
+      transition: all 0.3s;
+    }
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    textarea {
+      width: 100%;
+      height: 280px;
+      background: #020617;
+      color: #94a3b8;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      outline: none;
+      resize: vertical;
+      white-space: pre;
+    }
+    textarea:focus {
+      border-color: #0284c7;
+      color: #f1f5f9;
+    }
+    .hint {
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container">
+
+    <!-- 1. LIVE PREVIEW STAGE -->
+    <div class="preview-box" id="previewStage"></div>
+
+    <!-- 2. EXPORT CONTROLS -->
+    <div class="panel">
+      <div class="input-row">
+        <label for="exportInput">File Name:</label>
+        <input type="text" id="exportInput" value="Linux_Tech_Hindi_Banner" placeholder="Enter file name..." />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-png" id="pngBtn" onclick="downloadPNG()">Download .PNG (2560x1440)</button>
+        <button class="btn-svg" onclick="downloadSVG()">Download .SVG</button>
+        <button class="btn-zip" id="zipBtn" onclick="downloadZIP()">Download Both (.PNG + .SVG in ZIP)</button>
+      </div>
+
+      <span class="hint">Mobile Safe Zone: 1546 x 423 px | Full Canvas: 2560 x 1440 px</span>
+    </div>
+
+    <!-- 3. EDITABLE CODE LAB PANEL -->
+    <div class="panel">
+      <div class="code-header">
+        <h3>
+          Editable Banner SVG Code 
+          <span class="status-badge" id="statusBadge">Live In Sync</span>
+        </h3>
+        <div class="action-group">
+          <button class="btn-copy" id="copyCodeBtn" onclick="copyBannerCode()">
+            <span id="copyIcon">📋</span>
+            <span id="copyBtnText">Copy Code</span>
+          </button>
+          <button class="btn-update" onclick="updatePreviewFromTextarea()">
+            <span>⚡</span>
+            <span>Update &amp; Preview</span>
+          </button>
+        </div>
+      </div>
+
+      <textarea id="bannerCodeTextarea" spellcheck="false"><svg id="ytBanner" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 1440" width="2560" height="1440">
+  <defs>
+    <!-- Deep Midnight Background Base -->
+    <linearGradient id="bgBase" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#040813"/>
+      <stop offset="50%" stop-color="#020611"/>
+      <stop offset="100%" stop-color="#010307"/>
+    </linearGradient>
+
+    <!-- Soft Atmospheric Glow -->
+    <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="140"/>
+    </filter>
+
+    <!-- Typography Drop Shadow -->
+    <filter id="textGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="20" flood-color="#000" flood-opacity="0.85"/>
+    </filter>
+
+    <!-- Exact Neon Green Gradient for TECH (#34d399 -> #10b981 -> #059669) -->
+    <linearGradient id="tGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Safe Zone Mobile Border Gradient -->
+    <linearGradient id="bGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" stop-opacity="0.85"/>
+      <stop offset="35%" stop-color="#10b981" stop-opacity="0.95"/>
+      <stop offset="70%" stop-color="#0284c7" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.85"/>
+    </linearGradient>
+
+    <!-- Center Beam Divider Gradient -->
+    <linearGradient id="lGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#00f2fe" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#10b981" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- ================= AAPKA EXACT HARDWARE SCREW MATERIAL ================= -->
+    <linearGradient id="outerBevelGrad" x1="250" y1="25" x2="250" y2="475" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"></stop>
+      <stop offset="12%" stop-color="#eef1f4"></stop>
+      <stop offset="38%" stop-color="#cfd4d9"></stop>
+      <stop offset="70%" stop-color="#8b9198"></stop>
+      <stop offset="92%" stop-color="#5a6066"></stop>
+      <stop offset="100%" stop-color="#3d4247"></stop>
+    </linearGradient>
+
+    <linearGradient id="darkTrenchGrad" x1="250" y1="50" x2="250" y2="450" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#555a5f"></stop>
+      <stop offset="25%" stop-color="#6f757b"></stop>
+      <stop offset="65%" stop-color="#52575d"></stop>
+      <stop offset="100%" stop-color="#303337"></stop>
+    </linearGradient>
+
+    <linearGradient id="innerRimHighlightGrad" x1="250" y1="64" x2="250" y2="436" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#494e53"></stop>
+      <stop offset="40%" stop-color="#8d949b"></stop>
+      <stop offset="85%" stop-color="#dfe3e7"></stop>
+      <stop offset="100%" stop-color="#ffffff"></stop>
+    </linearGradient>
+
+    <linearGradient id="screwFaceDomeGrad" x1="250" y1="66" x2="250" y2="434" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"></stop>
+      <stop offset="18%" stop-color="#f8f9fa"></stop>
+      <stop offset="45%" stop-color="#eceff2"></stop>
+      <stop offset="75%" stop-color="#cbcfd4"></stop>
+      <stop offset="92%" stop-color="#b2b7bd"></stop>
+      <stop offset="100%" stop-color="#9ea3aa"></stop>
+    </linearGradient>
+
+    <linearGradient id="slotDeepCoreGrad" x1="250" y1="170" x2="250" y2="330" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34373b"></stop>
+      <stop offset="50%" stop-color="#393d41"></stop>
+      <stop offset="100%" stop-color="#404448"></stop>
+    </linearGradient>
+
+    <path id="exactCrossPath" d="
+      M 232 178
+      L 232 176
+      A 6 6 0 0 1 238 170
+      L 262 170
+      A 6 6 0 0 1 268 176
+      L 268 209
+      A 23 23 0 0 0 291 232
+      L 324 232
+      A 6 6 0 0 1 330 238
+      L 330 262
+      A 6 6 0 0 1 324 268
+      L 291 268
+      A 23 23 0 0 0 268 291
+      L 268 324
+      A 6 6 0 0 1 262 330
+      L 238 330
+      A 6 6 0 0 1 232 324
+      L 232 291
+      A 23 23 0 0 0 209 268
+      L 176 268
+      A 6 6 0 0 1 170 262
+      L 170 238
+      A 6 6 0 0 1 176 232
+      L 209 232
+      A 23 23 0 0 0 232 209
+      Z"></path>
+
+    <g id="screwSvgTemplate">
+      <circle cx="250" cy="250" r="225" fill="url(#outerBevelGrad)"></circle>
+      <circle cx="250" cy="250" r="200" fill="url(#darkTrenchGrad)"></circle>
+      <circle cx="250" cy="250" r="186" fill="url(#innerRimHighlightGrad)"></circle>
+      <circle cx="250" cy="250" r="184" fill="url(#screwFaceDomeGrad)"></circle>
+      <g transform="rotate(45 250 250)">
+        <use href="#exactCrossPath" fill="none" stroke="#d5dbe1" stroke-width="12" stroke-linejoin="round"></use>
+        <use href="#exactCrossPath" fill="none" stroke="#484d53" stroke-width="3" stroke-linejoin="round"></use>
+        <use href="#exactCrossPath" fill="url(#slotDeepCoreGrad)"></use>
+      </g>
+    </g>
+  </defs>
+
+  <!-- Base Background -->
+  <rect width="2560" height="1440" fill="url(#bgBase)"/>
+
+  <!-- Atmospheric Glows -->
+  <g filter="url(#softBlur)">
+    <circle cx="1280" cy="720" r="360" fill="#1e40af" opacity="0.35"/>
+    <circle cx="780" cy="650" r="280" fill="#0284c7" opacity="0.38"/>
+    <circle cx="1780" cy="790" r="300" fill="#10b981" opacity="0.32"/>
+  </g>
+
+  <!-- Mobile Safe Zone Outer Frame (1546 x 423 px) -->
+  <rect 
+    x="507" 
+    y="508.5" 
+    width="1546" 
+    height="423" 
+    rx="24" 
+    fill="rgba(255, 255, 255, 0.015)" 
+    stroke="url(#bGrad)" 
+    stroke-width="3.5"
+  />
+
+  <!-- 4 Identical Hardware Screws (Zero Rotation, Exact Alignment) -->
+  <g transform="translate(536, 538) scale(0.072) translate(-250, -250)"><use href="#screwSvgTemplate"/></g>
+  <g transform="translate(2024, 538) scale(0.072) translate(-250, -250)"><use href="#screwSvgTemplate"/></g>
+  <g transform="translate(536, 902) scale(0.072) translate(-250, -250)"><use href="#screwSvgTemplate"/></g>
+  <g transform="translate(2024, 902) scale(0.072) translate(-250, -250)"><use href="#screwSvgTemplate"/></g>
+
+  <!-- Typography Safe Zone -->
+  <g filter="url(#textGlow)">
+    <text x="1280" y="702" text-anchor="middle" font-family="'Outfit', system-ui, -apple-system, sans-serif">
+      <tspan fill="#ffffff" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" font-weight="900" font-size="92" letter-spacing="2">LINUX</tspan>
+      <tspan fill="#64748b" stroke="#64748b" stroke-width="1" font-weight="800" font-size="76" dx="14" dy="-2">&amp;</tspan>
+      <tspan fill="url(#tGrad)" stroke="url(#tGrad)" stroke-width="3" stroke-linejoin="round" font-weight="900" font-size="92" letter-spacing="2" dx="14" dy="2">TECH</tspan>
+      <tspan fill="#ffffff" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" font-weight="900" font-size="92" letter-spacing="2" dx="12">IN HINDI</tspan>
+    </text>
+
+    <rect x="910" y="742" width="740" height="3.5" rx="2" fill="url(#lGrad)"/>
+
+    <text x="1280" y="812" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-weight="900" font-size="35" fill="#f1f5f9" stroke="#f1f5f9" stroke-width="1.2" stroke-linejoin="round" letter-spacing="10" style="text-transform: uppercase;">
+      DISCOVER THE REAL TECH WORLD
+    </text>
+  </g>
+</svg></textarea>
+      <span class="hint">Code me badlaav karne ke baad "Update &amp; Preview" button dabayein (Shortcut: Ctrl + Enter).</span>
+    </div>
+
+  </div>
+
+  <script>
+    const textarea = document.getElementById('bannerCodeTextarea');
+    const previewStage = document.getElementById('previewStage');
+    const statusBadge = document.getElementById('statusBadge');
+
+    function updatePreviewFromTextarea() {
+      const code = textarea.value.trim();
+      previewStage.innerHTML = code;
+
+      statusBadge.innerText = 'Preview Updated!';
+      statusBadge.style.background = 'rgba(2, 132, 199, 0.2)';
+      statusBadge.style.borderColor = '#0284c7';
+      statusBadge.style.color = '#38bdf8';
+
+      setTimeout(() => {
+        statusBadge.innerText = 'Live In Sync';
+        statusBadge.style.background = 'rgba(16, 185, 129, 0.12)';
+        statusBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        statusBadge.style.color = '#10b981';
+      }, 1500);
+    }
+
+    textarea.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        updatePreviewFromTextarea();
+      }
+    });
+
+    async function copyBannerCode() {
+      const copyBtnText = document.getElementById('copyBtnText');
+      const copyIcon = document.getElementById('copyIcon');
+
+      try {
+        await navigator.clipboard.writeText(textarea.value);
+        copyBtnText.innerText = 'Copied!';
+        copyIcon.innerText = '✓';
+        setTimeout(() => {
+          copyBtnText.innerText = 'Copy Code';
+          copyIcon.innerText = '📋';
+        }, 2000);
+      } catch (err) {
+        textarea.select();
+        document.execCommand('copy');
+        copyBtnText.innerText = 'Copied!';
+      }
+    }
+
+    function triggerSave(url, filename) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function getFileName() {
+      const raw = document.getElementById('exportInput').value.trim();
+      return raw || 'Linux_Tech_Hindi_Banner';
+    }
+
+    function getCleanSvgString() {
+      return textarea.value.trim();
+    }
+
+    function getActiveSvgBlob() {
+      return new Blob([getCleanSvgString()], { type: 'image/svg+xml;charset=utf-8' });
+    }
+
+    async function renderCanvas() {
+      await document.fonts.ready;
+
+      let svgString = getCleanSvgString();
+
+      const encodedSvg = encodeURIComponent(svgString)
+        .replace(/'/g, '%27')
+        .replace(/"/g, '%22');
+      const dataUri = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+
+      return new Promise((resolve, reject) => {
+        img.onload = function () {
+          const canvas = document.createElement('canvas');
+          canvas.width = 2560;
+          canvas.height = 1440;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas);
+        };
+        img.onerror = function (e) {
+          const blob = getActiveSvgBlob();
+          const blobUrl = URL.createObjectURL(blob);
+          const fallbackImg = new Image();
+          fallbackImg.onload = function () {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2560;
+            canvas.height = 1440;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(fallbackImg, 0, 0);
+            URL.revokeObjectURL(blobUrl);
+            resolve(canvas);
+          };
+          fallbackImg.onerror = () => reject(new Error('Canvas rasterize error'));
+          fallbackImg.src = blobUrl;
+        };
+        img.src = dataUri;
+      });
+    }
+
+    async function downloadPNG() {
+      const btn = document.getElementById('pngBtn');
+      const oldTxt = btn.innerText;
+      btn.innerText = 'Downloading...';
+      btn.disabled = true;
+
+      try {
+        const canvas = await renderCanvas();
+        if (canvas.toBlob) {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              triggerSave(url, getFileName() + '.png');
+              setTimeout(() => URL.revokeObjectURL(url), 4000);
+            } else {
+              const pngUrl = canvas.toDataURL('image/png', 1.0);
+              triggerSave(pngUrl, getFileName() + '.png');
+            }
+          }, 'image/png', 1.0);
+        } else {
+          const pngUrl = canvas.toDataURL('image/png', 1.0);
+          triggerSave(pngUrl, getFileName() + '.png');
+        }
+      } catch (err) {
+        console.error('PNG Export failed:', err);
+        alert('PNG create karte waqt error aaya. SVG direct download try karein.');
+      } finally {
+        setTimeout(() => {
+          btn.innerText = oldTxt;
+          btn.disabled = false;
+        }, 1200);
+      }
+    }
+
+    function downloadSVG() {
+      const blob = getActiveSvgBlob();
+      const url = URL.createObjectURL(blob);
+      triggerSave(url, getFileName() + '.svg');
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    async function downloadZIP() {
+      const btn = document.getElementById('zipBtn');
+      const oldTxt = btn.innerText;
+      btn.innerText = 'Downloading zip...';
+      btn.disabled = true;
+
+      try {
+        const baseName = getFileName();
+        const zip = new JSZip();
+        zip.file(`${baseName}.svg`, getActiveSvgBlob());
+
+        const canvas = await renderCanvas();
+        await new Promise((resolve) => {
+          canvas.toBlob(async function (pngBlob) {
+            zip.file(`${baseName}.png`, pngBlob);
+            const zipContent = await zip.generateAsync({ type: 'blob' });
+            const zipUrl = URL.createObjectURL(zipContent);
+            triggerSave(zipUrl, `${baseName}.zip`);
+            setTimeout(() => URL.revokeObjectURL(zipUrl), 4000);
+            resolve();
+          }, 'image/png');
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setTimeout(() => {
+          btn.innerText = oldTxt;
+          btn.disabled = false;
+        }, 1200);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updatePreviewFromTextarea();
+    });
+  </script>
+</body>
+</html>
