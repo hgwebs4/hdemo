@@ -1,621 +1,1599 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Linux & Tech In Hindi - Live Editable Banner Studio</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>DNotes</title>
 
-  <!-- Google Web Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&family=Plus+Jakarta+Sans:wght@800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
 
-  <!-- JSZip -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+:root {
+    --bg: #f8f9fd;
+    --text: #202124;
+    --toolbar: #e8ecf5;
+    --keyboard-height: 0px;
+}
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+body {
+    margin: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+}
+
+header {
+    height: 65px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 8px;
+}
+
+button {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: #555;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.top-btn {
+    width: 36px;
+    height: 42px;
+    font-size: 25px;
+    flex-shrink: 0;
+}
+
+#title {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+main {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 20px 120px;
+}
+
+#editor {
+    display: block;
+    width: 100%;
+    min-height: 100%;
+    border: 0;
+    outline: 0;
+    resize: none;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 21px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+#editor::placeholder { color: #aaa; }
+
+/* PREVIEW */
+
+#preview {
+    display: none;
+    font-size: 20px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+
+#preview h1 { font-size: 1.7em; }
+#preview h2 { font-size: 1.4em; }
+#preview h3 { font-size: 1.15em; }
+
+#preview pre {
+    background: #e9edf4;
+    padding: 14px;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+#preview code {
+    background: #e9edf4;
+    padding: 3px 5px;
+    border-radius: 4px;
+}
+
+#preview pre code { background: transparent; }
+
+#preview blockquote {
+    border-left: 3px solid #aab5c5;
+    padding-left: 14px;
+    color: #666;
+}
+
+#preview a { color: #356b9d; }
+
+#preview table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    font-size: 16px;
+}
+
+#preview th,
+#preview td {
+    border: 1px solid #cbd2dc;
+    padding: 9px;
+    text-align: left;
+}
+
+/* TOOLBAR */
+
+.toolbar {
+    position: fixed;
+    left: 4%;
+    width: 92%;
+
+    bottom: calc(
+        var(--keyboard-height) +
+        14px +
+        env(safe-area-inset-bottom)
+    );
+
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 7px 5px;
+
+    background: var(--toolbar);
+    border-radius: 28px;
+    box-shadow: 0 5px 14px #0002;
+
+    z-index: 5;
+    touch-action: none;
+    user-select: none;
+}
+
+.tool {
+    width: 43px;
+    height: 48px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    font-weight: bold;
+    color: #242830;
+    flex-shrink: 1;
+    touch-action: none;
+}
+
+.tool:active { background: #d4dce9; }
+
+.italic {
+    font-style: italic;
+    font-family: Georgia, serif;
+}
+
+.tool svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+}
+
+/* MENU */
+
+.menu {
+    display: none;
+    position: fixed;
+    top: 60px;
+    right: 14px;
+    background: white;
+    border-radius: 13px;
+    padding: 8px;
+    box-shadow: 0 5px 20px #0002;
+    z-index: 10;
+    min-width: 180px;
+}
+
+.menu button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    text-align: left;
+}
+
+.status {
+    position: fixed;
+    bottom: 95px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 11px;
+    color: #999;
+    pointer-events: none;
+}
+
+/* TABLE PICKER */
+
+.table-picker {
+    display: none;
+    position: fixed;
+    z-index: 20;
+    left: 50%;
+    bottom: calc(
+        var(--keyboard-height) +
+        95px +
+        env(safe-area-inset-bottom)
+    );
+    transform: translateX(-50%);
+    width: min(340px, 92vw);
+    padding: 15px;
+    background: white;
+    border-radius: 17px;
+    box-shadow: 0 6px 25px #0003;
+    touch-action: none;
+}
+
+.picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.picker-close {
+    font-size: 22px;
+    width: 30px;
+    height: 30px;
+}
+
+.table-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 4px;
+    touch-action: none;
+    user-select: none;
+}
+
+.grid-cell {
+    aspect-ratio: 1;
+    border: 1px solid #cbd2dc;
+    border-radius: 4px;
+    background: #f6f7fa;
+}
+
+.grid-cell.selected {
+    background: #8caedb;
+    border-color: #527eaf;
+}
+
+.grid-cell:active {
+    background: #739bcf;
+}
+
+.picker-size {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 14px;
+}
+
+.picker-size input {
+    width: 55px;
+    height: 36px;
+    text-align: center;
+    border: 1px solid #ccd3de;
+    border-radius: 7px;
+    font-size: 15px;
+    outline: none;
+}
+
+.picker-size span {
+    color: #666;
+    font-size: 14px;
+}
+
+.picker-actions {
+    display: flex;
+    gap: 9px;
+    margin-top: 13px;
+}
+
+.picker-actions button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    background: #e8ecf5;
+    font-weight: 600;
+}
+
+.picker-actions .insert-table {
+    background: #527eaf;
+    color: white;
+}
+
+@media(min-width:700px) {
+    main {
+        max-width: 850px;
+        width: 100%;
+        margin: auto;
     }
-    body {
-      background-color: #030712;
-      color: #f8fafc;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 30px 16px;
+
+    .toolbar {
+        width: min(620px,75%);
+        left: 50%;
+        transform: translateX(-50%);
     }
-    .main-container {
-      width: 100%;
-      max-width: 1100px;
-      display: flex;
-      flex-direction: column;
-      gap: 22px;
-    }
-    .preview-box {
-      width: 100%;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), 0 0 40px rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: #020617;
-      min-height: 200px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .preview-box svg {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-    .panel {
-      background: #0b1120;
-      border: 1px solid #1e293b;
-      border-radius: 14px;
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .input-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-      max-width: 520px;
-      margin: 0 auto;
-    }
-    .input-row label {
-      font-size: 14px;
-      font-weight: 700;
-      color: #94a3b8;
-      white-space: nowrap;
-    }
-    .input-row input {
-      flex: 1;
-      background: #030712;
-      border: 1px solid #334155;
-      padding: 10px 14px;
-      border-radius: 8px;
-      color: #10b981;
-      font-size: 14px;
-      font-weight: 600;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .input-row input:focus {
-      border-color: #10b981;
-    }
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: center;
-      width: 100%;
-    }
-    button {
-      padding: 12px 24px;
-      font-size: 14px;
-      font-family: inherit;
-      font-weight: 700;
-      border-radius: 8px;
-      cursor: pointer;
-      border: none;
-      transition: transform 0.15s ease, filter 0.15s ease, background 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    button:active {
-      transform: scale(0.97);
-    }
-    .btn-png {
-      background: #0f172a;
-      color: #38bdf8;
-      border: 1px solid #0284c7;
-    }
-    .btn-png:hover {
-      background: #0284c7;
-      color: #fff;
-    }
-    .btn-svg {
-      background: #0f172a;
-      color: #10b981;
-      border: 1px solid #059669;
-    }
-    .btn-svg:hover {
-      background: #059669;
-      color: #fff;
-    }
-    .btn-zip {
-      background: linear-gradient(135deg, #10b981 0%, #0284c7 100%);
-      color: #ffffff;
-      box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
-    }
-    .btn-zip:hover {
-      filter: brightness(1.1);
-    }
-    .btn-update {
-      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-      color: #ffffff;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
-    }
-    .btn-update:hover {
-      filter: brightness(1.15);
-    }
-    .btn-copy {
-      background: #1e293b;
-      color: #cbd5e1;
-      border: 1px solid #334155;
-    }
-    .btn-copy:hover {
-      background: #334155;
-      color: #ffffff;
-    }
-    .code-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 14px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .code-header h3 {
-      font-size: 15px;
-      color: #cbd5e1;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .status-badge {
-      font-size: 11px;
-      padding: 3px 8px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #10b981;
-      border-radius: 6px;
-      font-weight: 700;
-      transition: all 0.3s;
-    }
-    .action-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    textarea {
-      width: 100%;
-      height: 280px;
-      background: #020617;
-      color: #94a3b8;
-      border: 1px solid #1e293b;
-      border-radius: 8px;
-      padding: 14px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      line-height: 1.5;
-      outline: none;
-      resize: vertical;
-      white-space: pre;
-    }
-    textarea:focus {
-      border-color: #0284c7;
-      color: #f1f5f9;
-    }
-    .hint {
-      font-size: 12px;
-      color: #64748b;
-      text-align: center;
-    }
-  </style>
+}
+</style>
 </head>
+
 <body>
 
-  <div class="main-container">
+<header>
+    <button class="top-btn" id="backBtn">‹</button>
+    <input id="title" value="Untitled note">
+    <button class="top-btn" id="previewBtn">◉</button>
+    <button class="top-btn" id="undoBtn">↶</button>
+    <button class="top-btn" id="redoBtn">↷</button>
+    <button class="top-btn" id="saveBtn">✓</button>
+    <button class="top-btn" id="menuBtn">⋮</button>
+</header>
 
-    <!-- 1. LIVE PREVIEW STAGE -->
-    <div class="preview-box" id="previewStage"></div>
+<main>
+    <textarea
+        id="editor"
+        placeholder="Start writing Markdown..."
+        spellcheck="false"
+    ></textarea>
 
-    <!-- 2. EXPORT CONTROLS -->
-    <div class="panel">
-      <div class="input-row">
-        <label for="exportInput">File Name:</label>
-        <input type="text" id="exportInput" value="Linux_Tech_Hindi_Banner" placeholder="Enter file name..." />
-      </div>
+    <article id="preview"></article>
+</main>
 
-      <div class="btn-row">
-        <button class="btn-png" id="pngBtn" onclick="downloadPNG()">Download .PNG (2560x1440)</button>
-        <button class="btn-svg" onclick="downloadSVG()">Download .SVG</button>
-        <button class="btn-zip" id="zipBtn" onclick="downloadZIP()">Download Both (.PNG + .SVG in ZIP)</button>
-      </div>
+<!-- TOOLBAR -->
 
-      <span class="hint">Mobile Safe Zone: 1546 x 423 px | Full Canvas: 2560 x 1440 px</span>
+<div class="toolbar" id="toolbar">
+
+    <button class="tool" data-action="bold">B</button>
+    <button class="tool italic" data-action="italic">I</button>
+    <button class="tool" data-action="strike">S̶</button>
+    <button class="tool" data-action="heading">T</button>
+    <button class="tool" data-action="code">&lt;&gt;</button>
+    <button class="tool" data-action="codeblock">{ }</button>
+
+    <button class="tool" data-action="link">
+        <svg viewBox="0 0 24 24">
+            <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2"/>
+            <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/>
+        </svg>
+    </button>
+
+    <!-- TABLE BUTTON -->
+
+    <button class="tool" data-action="table" aria-label="Insert table">
+        ▦
+    </button>
+
+</div>
+
+<!-- TABLE PICKER -->
+
+<div class="table-picker" id="tablePicker">
+
+    <div class="picker-header">
+        <span>Select table size</span>
+        <button class="picker-close" id="closePicker">×</button>
     </div>
 
-    <!-- 3. EDITABLE CODE LAB PANEL -->
-    <div class="panel">
-      <div class="code-header">
-        <h3>
-          Editable Banner SVG Code 
-          <span class="status-badge" id="statusBadge">Live In Sync</span>
-        </h3>
-        <div class="action-group">
-          <button class="btn-copy" id="copyCodeBtn" onclick="copyBannerCode()">
-            <span id="copyIcon">📋</span>
-            <span id="copyBtnText">Copy Code</span>
-          </button>
-          <button class="btn-update" onclick="updatePreviewFromTextarea()">
-            <span>⚡</span>
-            <span>Update &amp; Preview</span>
-          </button>
-        </div>
-      </div>
+    <div class="table-grid" id="tableGrid"></div>
 
-      <textarea id="bannerCodeTextarea" spellcheck="false"><svg id="ytBanner" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 1440" width="2560" height="1440">
-  <defs>
-    <!-- Deep Midnight Background Base -->
-    <linearGradient id="bgBase" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#040813"/>
-      <stop offset="50%" stop-color="#020611"/>
-      <stop offset="100%" stop-color="#010307"/>
-    </linearGradient>
-
-    <!-- Soft Atmospheric Glow -->
-    <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="140"/>
-    </filter>
-
-    <!-- Typography Drop Shadow -->
-    <filter id="textGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="20" flood-color="#000" flood-opacity="0.85"/>
-    </filter>
-
-    <!-- Exact Neon Green Gradient for TECH (#34d399 -> #10b981 -> #059669) -->
-    <linearGradient id="tGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#34d399"/>
-      <stop offset="50%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#059669"/>
-    </linearGradient>
-
-    <!-- Safe Zone Mobile Border Gradient -->
-    <linearGradient id="bGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f2fe" stop-opacity="0.85"/>
-      <stop offset="35%" stop-color="#10b981" stop-opacity="0.95"/>
-      <stop offset="70%" stop-color="#0284c7" stop-opacity="0.7"/>
-      <stop offset="100%" stop-color="#10b981" stop-opacity="0.85"/>
-    </linearGradient>
-
-    <!-- Center Beam Divider Gradient -->
-    <linearGradient id="lGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0284c7" stop-opacity="0"/>
-      <stop offset="30%" stop-color="#00f2fe" stop-opacity="0.85"/>
-      <stop offset="50%" stop-color="#ffffff"/>
-      <stop offset="70%" stop-color="#10b981" stop-opacity="0.85"/>
-      <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
-    </linearGradient>
-
-    <!-- ================= AAPKA EXACT HARDWARE SCREW MATERIAL ================= -->
-    <linearGradient id="outerBevelGrad" x1="250" y1="25" x2="250" y2="475" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff"></stop>
-      <stop offset="12%" stop-color="#eef1f4"></stop>
-      <stop offset="38%" stop-color="#cfd4d9"></stop>
-      <stop offset="70%" stop-color="#8b9198"></stop>
-      <stop offset="92%" stop-color="#5a6066"></stop>
-      <stop offset="100%" stop-color="#3d4247"></stop>
-    </linearGradient>
-
-    <linearGradient id="darkTrenchGrad" x1="250" y1="50" x2="250" y2="450" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#555a5f"></stop>
-      <stop offset="25%" stop-color="#6f757b"></stop>
-      <stop offset="65%" stop-color="#52575d"></stop>
-      <stop offset="100%" stop-color="#303337"></stop>
-    </linearGradient>
-
-    <linearGradient id="innerRimHighlightGrad" x1="250" y1="64" x2="250" y2="436" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#494e53"></stop>
-      <stop offset="40%" stop-color="#8d949b"></stop>
-      <stop offset="85%" stop-color="#dfe3e7"></stop>
-      <stop offset="100%" stop-color="#ffffff"></stop>
-    </linearGradient>
-
-    <linearGradient id="screwFaceDomeGrad" x1="250" y1="66" x2="250" y2="434" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff"></stop>
-      <stop offset="18%" stop-color="#f8f9fa"></stop>
-      <stop offset="45%" stop-color="#eceff2"></stop>
-      <stop offset="75%" stop-color="#cbcfd4"></stop>
-      <stop offset="92%" stop-color="#b2b7bd"></stop>
-      <stop offset="100%" stop-color="#9ea3aa"></stop>
-    </linearGradient>
-
-    <linearGradient id="slotDeepCoreGrad" x1="250" y1="170" x2="250" y2="330" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#34373b"></stop>
-      <stop offset="50%" stop-color="#393d41"></stop>
-      <stop offset="100%" stop-color="#404448"></stop>
-    </linearGradient>
-
-    <path id="exactCrossPath" d="
-      M 232 178
-      L 232 176
-      A 6 6 0 0 1 238 170
-      L 262 170
-      A 6 6 0 0 1 268 176
-      L 268 209
-      A 23 23 0 0 0 291 232
-      L 324 232
-      A 6 6 0 0 1 330 238
-      L 330 262
-      A 6 6 0 0 1 324 268
-      L 291 268
-      A 23 23 0 0 0 268 291
-      L 268 324
-      A 6 6 0 0 1 262 330
-      L 238 330
-      A 6 6 0 0 1 232 324
-      L 232 291
-      A 23 23 0 0 0 209 268
-      L 176 268
-      A 6 6 0 0 1 170 262
-      L 170 238
-      A 6 6 0 0 1 176 232
-      L 209 232
-      A 23 23 0 0 0 232 209
-      Z"></path>
-
-    <g id="screwSvgTemplate">
-      <circle cx="250" cy="250" r="225" fill="url(#outerBevelGrad)"></circle>
-      <circle cx="250" cy="250" r="200" fill="url(#darkTrenchGrad)"></circle>
-      <circle cx="250" cy="250" r="186" fill="url(#innerRimHighlightGrad)"></circle>
-      <circle cx="250" cy="250" r="184" fill="url(#screwFaceDomeGrad)"></circle>
-      <g transform="rotate(45 250 250)">
-        <use href="#exactCrossPath" fill="none" stroke="#d5dbe1" stroke-width="12" stroke-linejoin="round"></use>
-        <use href="#exactCrossPath" fill="none" stroke="#484d53" stroke-width="3" stroke-linejoin="round"></use>
-        <use href="#exactCrossPath" fill="url(#slotDeepCoreGrad)"></use>
-      </g>
-    </g>
-  </defs>
-
-  <!-- Base Background -->
-  <rect width="2560" height="1440" fill="url(#bgBase)"/>
-
-  <!-- Atmospheric Glows -->
-  <g filter="url(#softBlur)">
-    <circle cx="1280" cy="720" r="360" fill="#1e40af" opacity="0.35"/>
-    <circle cx="780" cy="650" r="280" fill="#0284c7" opacity="0.38"/>
-    <circle cx="1780" cy="790" r="300" fill="#10b981" opacity="0.32"/>
-  </g>
-
-  <!-- Mobile Safe Zone Outer Frame (1546 x 423 px) -->
-  <rect 
-    x="507" 
-    y="508.5" 
-    width="1546" 
-    height="423" 
-    rx="24" 
-    fill="rgba(255, 255, 255, 0.015)" 
-    stroke="url(#bGrad)" 
-    stroke-width="3.5"
-  />
-
-  <!-- 4 Identical Hardware Screws (Zero Rotation, Exact Alignment) -->
-  <g transform="translate(536, 538) scale(0.072) translate(-250, -250)"><use href="#screwSvgTemplate"/></g>
-  <g transform="translate(2024, 538) scale(0.072) translate(-250, -250)"><use href="#screwSvgTemplate"/></g>
-  <g transform="translate(536, 902) scale(0.072) translate(-250, -250)"><use href="#screwSvgTemplate"/></g>
-  <g transform="translate(2024, 902) scale(0.072) translate(-250, -250)"><use href="#screwSvgTemplate"/></g>
-
-  <!-- Typography Safe Zone -->
-  <g filter="url(#textGlow)">
-    <text x="1280" y="702" text-anchor="middle" font-family="'Outfit', system-ui, -apple-system, sans-serif">
-      <tspan fill="#ffffff" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" font-weight="900" font-size="92" letter-spacing="2">LINUX</tspan>
-      <tspan fill="#64748b" stroke="#64748b" stroke-width="1" font-weight="800" font-size="76" dx="14" dy="-2">&amp;</tspan>
-      <tspan fill="url(#tGrad)" stroke="url(#tGrad)" stroke-width="3" stroke-linejoin="round" font-weight="900" font-size="92" letter-spacing="2" dx="14" dy="2">TECH</tspan>
-      <tspan fill="#ffffff" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" font-weight="900" font-size="92" letter-spacing="2" dx="12">IN HINDI</tspan>
-    </text>
-
-    <rect x="910" y="742" width="740" height="3.5" rx="2" fill="url(#lGrad)"/>
-
-    <text x="1280" y="812" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-weight="900" font-size="35" fill="#f1f5f9" stroke="#f1f5f9" stroke-width="1.2" stroke-linejoin="round" letter-spacing="10" style="text-transform: uppercase;">
-      DISCOVER THE REAL TECH WORLD
-    </text>
-  </g>
-</svg></textarea>
-      <span class="hint">Code me badlaav karne ke baad "Update &amp; Preview" button dabayein (Shortcut: Ctrl + Enter).</span>
+    <div class="picker-size">
+        <input type="number" id="tableRows" min="1" max="9" value="3">
+        <span>Rows ×</span>
+        <input type="number" id="tableCols" min="1" max="9" value="3">
+        <span>Columns</span>
     </div>
 
-  </div>
+    <div class="picker-actions">
+        <button id="cancelTable">Cancel</button>
+        <button class="insert-table" id="insertTable">Insert Table</button>
+    </div>
 
-  <script>
-    const textarea = document.getElementById('bannerCodeTextarea');
-    const previewStage = document.getElementById('previewStage');
-    const statusBadge = document.getElementById('statusBadge');
+</div>
 
-    function updatePreviewFromTextarea() {
-      const code = textarea.value.trim();
-      previewStage.innerHTML = code;
+<div class="menu" id="menu">
+    <button data-menu="new">New Note</button>
+    <button data-menu="md">Download Markdown</button>
+    <button data-menu="html">Download HTML</button>
+    <button data-menu="clear">Clear Note</button>
+</div>
 
-      statusBadge.innerText = 'Preview Updated!';
-      statusBadge.style.background = 'rgba(2, 132, 199, 0.2)';
-      statusBadge.style.borderColor = '#0284c7';
-      statusBadge.style.color = '#38bdf8';
+<script>
+const editor = document.getElementById("editor");
+const title = document.getElementById("title");
+const preview = document.getElementById("preview");
+const toolbar = document.getElementById("toolbar");
+const menu = document.getElementById("menu");
 
-      setTimeout(() => {
-        statusBadge.innerText = 'Live In Sync';
-        statusBadge.style.background = 'rgba(16, 185, 129, 0.12)';
-        statusBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-        statusBadge.style.color = '#10b981';
-      }, 1500);
-    }
+const tablePicker = document.getElementById("tablePicker");
+const tableGrid = document.getElementById("tableGrid");
+const tableRows = document.getElementById("tableRows");
+const tableCols = document.getElementById("tableCols");
 
-    textarea.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        updatePreviewFromTextarea();
-      }
-    });
+let previewMode = false;
 
-    async function copyBannerCode() {
-      const copyBtnText = document.getElementById('copyBtnText');
-      const copyIcon = document.getElementById('copyIcon');
 
-      try {
-        await navigator.clipboard.writeText(textarea.value);
-        copyBtnText.innerText = 'Copied!';
-        copyIcon.innerText = '✓';
-        setTimeout(() => {
-          copyBtnText.innerText = 'Copy Code';
-          copyIcon.innerText = '📋';
-        }, 2000);
-      } catch (err) {
-        textarea.select();
-        document.execCommand('copy');
-        copyBtnText.innerText = 'Copied!';
-      }
-    }
+/* SAVE */
 
-    function triggerSave(url, filename) {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+function save() {
+    localStorage.setItem("markdown-note", JSON.stringify({
+        title: title.value,
+        content: editor.value
+    }));
+    showStatus("Saved");
+}
 
-    function getFileName() {
-      const raw = document.getElementById('exportInput').value.trim();
-      return raw || 'Linux_Tech_Hindi_Banner';
-    }
 
-    function getCleanSvgString() {
-      return textarea.value.trim();
-    }
+/* RESTORE */
 
-    function getActiveSvgBlob() {
-      return new Blob([getCleanSvgString()], { type: 'image/svg+xml;charset=utf-8' });
-    }
+function restore() {
+    try {
+        const data = JSON.parse(
+            localStorage.getItem("markdown-note") || "null"
+        );
 
-    async function renderCanvas() {
-      await document.fonts.ready;
-
-      let svgString = getCleanSvgString();
-
-      const encodedSvg = encodeURIComponent(svgString)
-        .replace(/'/g, '%27')
-        .replace(/"/g, '%22');
-      const dataUri = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
-
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-
-      return new Promise((resolve, reject) => {
-        img.onload = function () {
-          const canvas = document.createElement('canvas');
-          canvas.width = 2560;
-          canvas.height = 1440;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas);
-        };
-        img.onerror = function (e) {
-          const blob = getActiveSvgBlob();
-          const blobUrl = URL.createObjectURL(blob);
-          const fallbackImg = new Image();
-          fallbackImg.onload = function () {
-            const canvas = document.createElement('canvas');
-            canvas.width = 2560;
-            canvas.height = 1440;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(fallbackImg, 0, 0);
-            URL.revokeObjectURL(blobUrl);
-            resolve(canvas);
-          };
-          fallbackImg.onerror = () => reject(new Error('Canvas rasterize error'));
-          fallbackImg.src = blobUrl;
-        };
-        img.src = dataUri;
-      });
-    }
-
-    async function downloadPNG() {
-      const btn = document.getElementById('pngBtn');
-      const oldTxt = btn.innerText;
-      btn.innerText = 'Downloading...';
-      btn.disabled = true;
-
-      try {
-        const canvas = await renderCanvas();
-        if (canvas.toBlob) {
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const url = URL.createObjectURL(blob);
-              triggerSave(url, getFileName() + '.png');
-              setTimeout(() => URL.revokeObjectURL(url), 4000);
-            } else {
-              const pngUrl = canvas.toDataURL('image/png', 1.0);
-              triggerSave(pngUrl, getFileName() + '.png');
-            }
-          }, 'image/png', 1.0);
-        } else {
-          const pngUrl = canvas.toDataURL('image/png', 1.0);
-          triggerSave(pngUrl, getFileName() + '.png');
+        if (data) {
+            title.value = data.title || "Untitled note";
+            editor.value = data.content || "";
         }
-      } catch (err) {
-        console.error('PNG Export failed:', err);
-        alert('PNG create karte waqt error aaya. SVG direct download try karein.');
-      } finally {
-        setTimeout(() => {
-          btn.innerText = oldTxt;
-          btn.disabled = false;
-        }, 1200);
-      }
+    } catch(e) {}
+}
+
+restore();
+
+
+/* STATUS */
+
+let statusTimer;
+
+function showStatus(message) {
+    let el = document.querySelector(".status");
+
+    if (!el) {
+        el = document.createElement("div");
+        el.className = "status";
+        document.body.appendChild(el);
     }
 
-    function downloadSVG() {
-      const blob = getActiveSvgBlob();
-      const url = URL.createObjectURL(blob);
-      triggerSave(url, getFileName() + '.svg');
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    el.textContent = message;
+    clearTimeout(statusTimer);
+
+    statusTimer = setTimeout(() => {
+        el.textContent = "";
+    }, 1300);
+}
+
+
+/* AUTO SAVE */
+
+let saveTimer;
+
+function autoSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 350);
+}
+
+editor.addEventListener("input", autoSave);
+title.addEventListener("input", autoSave);
+
+
+/* CARET MEMORY */
+
+let savedStart = 0;
+let savedEnd = 0;
+
+function rememberSelection() {
+    savedStart = editor.selectionStart;
+    savedEnd = editor.selectionEnd;
+}
+
+editor.addEventListener("select", rememberSelection);
+editor.addEventListener("keyup", rememberSelection);
+editor.addEventListener("click", rememberSelection);
+editor.addEventListener("input", rememberSelection);
+editor.addEventListener("focus", rememberSelection);
+
+
+/* GET CURRENT SELECTION */
+
+function getSelection() {
+    if (document.activeElement === editor) {
+        rememberSelection();
     }
 
-    async function downloadZIP() {
-      const btn = document.getElementById('zipBtn');
-      const oldTxt = btn.innerText;
-      btn.innerText = 'Downloading zip...';
-      btn.disabled = true;
+    return {
+        start: savedStart,
+        end: savedEnd
+    };
+}
 
-      try {
-        const baseName = getFileName();
-        const zip = new JSZip();
-        zip.file(`${baseName}.svg`, getActiveSvgBlob());
 
-        const canvas = await renderCanvas();
-        await new Promise((resolve) => {
-          canvas.toBlob(async function (pngBlob) {
-            zip.file(`${baseName}.png`, pngBlob);
-            const zipContent = await zip.generateAsync({ type: 'blob' });
-            const zipUrl = URL.createObjectURL(zipContent);
-            triggerSave(zipUrl, `${baseName}.zip`);
-            setTimeout(() => URL.revokeObjectURL(zipUrl), 4000);
-            resolve();
-          }, 'image/png');
-        });
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setTimeout(() => {
-          btn.innerText = oldTxt;
-          btn.disabled = false;
-        }, 1200);
-      }
+/* INSERT AND SET CURSOR */
+
+function insertAt(start, end, text, cursor) {
+    editor.setRangeText(text, start, end, "preserve");
+    editor.setSelectionRange(cursor, cursor);
+
+    savedStart = cursor;
+    savedEnd = cursor;
+
+    autoSave();
+}
+
+
+/* FORMAT MARKERS */
+
+function clickFormat(type) {
+
+    const markers = {
+        bold: ["**", "**"],
+        italic: ["*", "*"],
+        strike: ["~~", "~~"]
+    };
+
+    const [before, after] = markers[type];
+
+    const {start, end} = getSelection();
+    const value = editor.value;
+
+    editor.focus();
+
+    /* SELECTED TEXT */
+
+    if (start !== end) {
+
+        const selected = value.slice(start, end);
+
+        const left = value.slice(start - before.length, start);
+        const right = value.slice(end, end + after.length);
+
+        if (left === before && right === after) {
+
+            editor.setRangeText(
+                selected,
+                start - before.length,
+                end + after.length,
+                "select"
+            );
+
+            savedStart = start - before.length;
+            savedEnd = savedStart + selected.length;
+
+        } else {
+
+            editor.setRangeText(
+                before + selected + after,
+                start,
+                end,
+                "select"
+            );
+
+            savedStart = start + before.length;
+            savedEnd = savedStart + selected.length;
+        }
+
+        editor.setSelectionRange(savedStart, savedEnd);
+        autoSave();
+        return;
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      updatePreviewFromTextarea();
+
+    /* EMPTY MARKERS */
+
+    if (
+        value.slice(start - before.length, start) === before &&
+        value.slice(start, start + after.length) === after
+    ) {
+
+        insertAt(
+            start - before.length,
+            start + after.length,
+            "",
+            start - before.length
+        );
+
+        return;
+    }
+
+
+    /*
+       If line has a heading prefix,
+       keep formatting after the heading prefix.
+    */
+
+    const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+    const lineBeforeCursor = value.slice(lineStart, start);
+
+    const headingMatch = lineBeforeCursor.match(/^#{1,3} /);
+
+    let position = start;
+
+    if (headingMatch) {
+        position = Math.max(
+            start,
+            lineStart + headingMatch[0].length
+        );
+    }
+
+    insertAt(
+        position,
+        position,
+        before + after,
+        position + before.length
+    );
+}
+
+
+/* SWIPE UP FORMATTING */
+
+function swipeFormat(type) {
+
+    const markers = {
+        bold: ["**", "**"],
+        italic: ["*", "*"],
+        strike: ["~~", "~~"]
+    };
+
+    const [before, after] = markers[type];
+
+    const {start: cursor} = getSelection();
+
+    const value = editor.value;
+
+    const lineStart = value.lastIndexOf("\n", cursor - 1) + 1;
+
+    let lineEnd = value.indexOf("\n", cursor);
+    if (lineEnd === -1) lineEnd = value.length;
+
+    const line = value.slice(lineStart, lineEnd);
+
+    if (!line.trim()) return;
+
+    /*
+       Preserve heading prefix.
+       Format only content after "# ".
+    */
+
+    const match = line.match(/^(#{1,3} )/);
+
+    const prefix = match ? match[0] : "";
+    const content = line.slice(prefix.length);
+
+    if (!content.trim()) return;
+
+    let result;
+
+    if (
+        content.startsWith(before) &&
+        content.endsWith(after) &&
+        content.length > before.length + after.length
+    ) {
+        result = content.slice(before.length, -after.length);
+    } else {
+        result = before + content + after;
+    }
+
+    const newLine = prefix + result;
+
+    editor.setRangeText(
+        newLine,
+        lineStart,
+        lineEnd,
+        "preserve"
+    );
+
+    const newCursor = cursor + newLine.length - line.length;
+
+    savedStart = savedEnd = newCursor;
+    editor.setSelectionRange(newCursor, newCursor);
+
+    autoSave();
+}
+
+
+/* HEADING CYCLING */
+
+function heading() {
+
+    const {start: cursor} = getSelection();
+
+    const value = editor.value;
+
+    const lineStart = value.lastIndexOf("\n", cursor - 1) + 1;
+
+    let lineEnd = value.indexOf("\n", cursor);
+    if (lineEnd === -1) lineEnd = value.length;
+
+    const line = value.slice(lineStart, lineEnd);
+
+    const match = line.match(/^(#{1,3}) /);
+
+    let level = match ? match[1].length : 0;
+
+    const content = match
+        ? line.slice(match[0].length)
+        : line;
+
+    level = (level + 1) % 4;
+
+    const prefix = level ? "#".repeat(level) + " " : "";
+
+    const result = prefix + content;
+
+    /*
+       Heading is always inserted at the
+       absolute beginning of the line.
+    */
+
+    const oldPrefixLength = match ? match[0].length : 0;
+
+    const relativePosition = Math.max(
+        0,
+        cursor - lineStart - oldPrefixLength
+    );
+
+    const newCursor = lineStart + prefix.length + relativePosition;
+
+    editor.setRangeText(
+        result,
+        lineStart,
+        lineEnd,
+        "preserve"
+    );
+
+    savedStart = savedEnd = Math.min(
+        newCursor,
+        lineStart + result.length
+    );
+
+    editor.setSelectionRange(savedStart, savedEnd);
+
+    autoSave();
+}
+
+
+/* INLINE CODE */
+
+function code() {
+
+    const {start, end} = getSelection();
+
+    const selected = editor.value.slice(start, end);
+
+    editor.focus();
+
+    if (start === end) {
+        insertAt(start, end, "``", start + 1);
+    } else {
+        editor.setRangeText(
+            "`" + selected + "`",
+            start,
+            end,
+            "select"
+        );
+
+        savedStart = start + 1;
+        savedEnd = savedStart + selected.length;
+
+        editor.setSelectionRange(savedStart, savedEnd);
+        autoSave();
+    }
+}
+
+
+/* CODE BLOCK */
+
+function codeBlock() {
+
+    const {start, end} = getSelection();
+
+    const selected = editor.value.slice(start, end);
+
+    editor.focus();
+
+    const text = "```\n" + selected + "\n```";
+
+    editor.setRangeText(text, start, end, "select");
+
+    savedStart = start + 4;
+    savedEnd = savedStart + selected.length;
+
+    editor.setSelectionRange(savedStart, savedEnd);
+
+    autoSave();
+}
+
+
+/* LINK */
+
+function insertLink() {
+
+    const {start, end} = getSelection();
+
+    const selected = editor.value.slice(start, end);
+
+    const url = prompt("Enter URL:");
+
+    if (!url) return;
+
+    editor.focus();
+
+    const text = "[" + (selected || "Link text") + "](" + url + ")";
+
+    editor.setRangeText(text, start, end, "select");
+
+    autoSave();
+}
+
+
+/* TABLE INSERTION */
+
+function createTable(rows, cols) {
+
+    rows = Math.max(1, Math.min(9, rows));
+    cols = Math.max(1, Math.min(9, cols));
+
+    const header = [];
+    const separator = [];
+    const body = [];
+
+    for (let c = 1; c <= cols; c++) {
+        header.push("Column " + c);
+        separator.push("---");
+    }
+
+    for (let r = 0; r < rows; r++) {
+        body.push(
+            "| " + Array(cols).fill("").join(" | ") + " |"
+        );
+    }
+
+    const table =
+        "| " + header.join(" | ") + " |\n" +
+        "| " + separator.join(" | ") + " |\n" +
+        body.join("\n");
+
+    const {start, end} = getSelection();
+
+    editor.focus();
+
+    const prefix = start > 0 && editor.value[start - 1] !== "\n"
+        ? "\n"
+        : "";
+
+    const suffix = end < editor.value.length &&
+        editor.value[end] !== "\n"
+        ? "\n"
+        : "";
+
+    const insertion = prefix + table + suffix;
+
+    editor.setRangeText(
+        insertion,
+        start,
+        end,
+        "end"
+    );
+
+    rememberSelection();
+    autoSave();
+
+    closeTablePicker();
+}
+
+
+/* TABLE PICKER GRID */
+
+let selectedRows = 3;
+let selectedCols = 3;
+let selectingGrid = false;
+let gridPointerId = null;
+
+function buildGrid() {
+
+    tableGrid.innerHTML = "";
+
+    for (let r = 1; r <= 9; r++) {
+
+        for (let c = 1; c <= 9; c++) {
+
+            const cell = document.createElement("div");
+
+            cell.className = "grid-cell";
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+
+            tableGrid.appendChild(cell);
+        }
+    }
+
+    updateGrid();
+}
+
+
+/* UPDATE GRID */
+
+function updateGrid() {
+
+    tableRows.value = selectedRows;
+    tableCols.value = selectedCols;
+
+    tableGrid.querySelectorAll(".grid-cell").forEach(cell => {
+
+        const row = Number(cell.dataset.row);
+        const col = Number(cell.dataset.col);
+
+        cell.classList.toggle(
+            "selected",
+            row <= selectedRows && col <= selectedCols
+        );
+
     });
-  </script>
+}
+
+
+/* SELECT GRID CELL */
+
+function selectGridCell(cell) {
+
+    if (!cell) return;
+
+    selectedRows = Number(cell.dataset.row);
+    selectedCols = Number(cell.dataset.col);
+
+    updateGrid();
+}
+
+
+/* GRID POINTER EVENTS */
+
+tableGrid.addEventListener("pointerdown", e => {
+
+    const cell = e.target.closest(".grid-cell");
+
+    if (!cell) return;
+
+    e.preventDefault();
+
+    selectingGrid = true;
+    gridPointerId = e.pointerId;
+
+    tableGrid.setPointerCapture(e.pointerId);
+
+    selectGridCell(cell);
+
+});
+
+tableGrid.addEventListener("pointermove", e => {
+
+    if (!selectingGrid || e.pointerId !== gridPointerId) return;
+
+    const element = document.elementFromPoint(e.clientX, e.clientY);
+
+    const cell = element?.closest(".grid-cell");
+
+    if (cell && tableGrid.contains(cell)) {
+        selectGridCell(cell);
+    }
+
+});
+
+function stopGridSelection(e) {
+
+    if (e.pointerId !== gridPointerId) return;
+
+    selectingGrid = false;
+    gridPointerId = null;
+}
+
+tableGrid.addEventListener("pointerup", stopGridSelection);
+tableGrid.addEventListener("pointercancel", stopGridSelection);
+
+
+/* INPUT AND GRID SYNC */
+
+function updateFromInputs() {
+
+    selectedRows = Math.max(
+        1,
+        Math.min(9, Number(tableRows.value) || 1)
+    );
+
+    selectedCols = Math.max(
+        1,
+        Math.min(9, Number(tableCols.value) || 1)
+    );
+
+    updateGrid();
+}
+
+tableRows.addEventListener("input", updateFromInputs);
+tableCols.addEventListener("input", updateFromInputs);
+
+
+/* OPEN PICKER */
+
+function openTablePicker() {
+
+    selectedRows = 3;
+    selectedCols = 3;
+
+    updateGrid();
+
+    tablePicker.style.display = "block";
+}
+
+
+/* CLOSE PICKER */
+
+function closeTablePicker() {
+    tablePicker.style.display = "none";
+}
+
+document.getElementById("closePicker").onclick = closeTablePicker;
+document.getElementById("cancelTable").onclick = closeTablePicker;
+
+document.getElementById("insertTable").onclick = () => {
+    createTable(selectedRows, selectedCols);
+};
+
+
+/* UNDO REDO */
+
+function undo() {
+    editor.focus();
+    document.execCommand("undo");
+    rememberSelection();
+    autoSave();
+}
+
+function redo() {
+    editor.focus();
+    document.execCommand("redo");
+    rememberSelection();
+    autoSave();
+}
+
+
+/* MARKDOWN RENDERER */
+
+function escapeHTML(text) {
+    return text.replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[c]);
+}
+
+
+function renderMarkdown(source) {
+
+    let text = escapeHTML(source);
+
+    const blocks = [];
+
+    /* CODE BLOCKS */
+
+    text = text.replace(
+        /```([^\n]*)\n([\s\S]*?)```/g,
+        (match, language, code) => {
+
+            const id = blocks.length;
+
+            blocks.push(
+                "<pre><code>" + code + "</code></pre>"
+            );
+
+            return "%%BLOCK" + id + "%%";
+        }
+    );
+
+
+    /* TABLES */
+
+    const lines = text.split("\n");
+    const output = [];
+
+    for (let i = 0; i < lines.length; i++) {
+
+        if (
+            lines[i].trim().startsWith("|") &&
+            i + 1 < lines.length &&
+            /^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i + 1])
+        ) {
+
+            const headers = lines[i]
+                .split("|")
+                .slice(1, -1);
+
+            i++;
+
+            let html = "<table><thead><tr>";
+
+            headers.forEach(h => {
+                html += "<th>" + h.trim() + "</th>";
+            });
+
+            html += "</tr></thead><tbody>";
+
+            while (
+                i + 1 < lines.length &&
+                lines[i + 1].trim().startsWith("|")
+            ) {
+
+                i++;
+
+                const cells = lines[i]
+                    .split("|")
+                    .slice(1, -1);
+
+                html += "<tr>";
+
+                cells.forEach(c => {
+                    html += "<td>" + c.trim() + "</td>";
+                });
+
+                html += "</tr>";
+            }
+
+            html += "</tbody></table>";
+
+            output.push(html);
+
+        } else {
+
+            output.push(lines[i]);
+
+        }
+    }
+
+    text = output.join("\n");
+
+
+    /* INLINE CODE */
+
+    text = text.replace(
+        /`([^`]+)`/g,
+        "<code>$1</code>"
+    );
+
+    /* LINKS */
+
+    text = text.replace(
+        /\[([^\]]+)\]\((https?:\/\/[^ )]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener">$1</a>'
+    );
+
+    /* BOLD */
+
+    text = text.replace(
+        /\*\*(.+?)\*\*/g,
+        "<strong>$1</strong>"
+    );
+
+    /* ITALIC */
+
+    text = text.replace(
+        /(?<!\*)\*([^*\n]+)\*(?!\*)/g,
+        "<em>$1</em>"
+    );
+
+    /* STRIKE */
+
+    text = text.replace(
+        /~~(.+?)~~/g,
+        "<del>$1</del>"
+    );
+
+    /* HEADINGS */
+
+    text = text.replace(/^### (.*)$/gm, "<h3>$1</h3>");
+    text = text.replace(/^## (.*)$/gm, "<h2>$1</h2>");
+    text = text.replace(/^# (.*)$/gm, "<h1>$1</h1>");
+
+    /* BLOCKQUOTE */
+
+    text = text.replace(
+        /^&gt; (.*)$/gm,
+        "<blockquote>$1</blockquote>"
+    );
+
+    text = text.replace(/^---+$/gm, "<hr>");
+
+    text = text.replace(/\n/g, "<br>");
+
+    text = text.replace(
+        /%%BLOCK(\d+)%%/g,
+        (match, id) => blocks[id]
+    );
+
+    return text;
+}
+
+
+/* PREVIEW */
+
+function togglePreview() {
+
+    if (!previewMode) {
+
+        closeTablePicker();
+
+        preview.innerHTML = renderMarkdown(editor.value);
+
+        previewMode = true;
+
+        editor.blur();
+
+        editor.style.display = "none";
+        preview.style.display = "block";
+        toolbar.style.display = "none";
+
+        showStatus("Preview");
+
+    } else {
+
+        openEditor();
+    }
+}
+
+
+/* BACK TO EDIT */
+
+function openEditor() {
+
+    previewMode = false;
+
+    preview.style.display = "none";
+    editor.style.display = "block";
+    toolbar.style.display = "flex";
+
+    showStatus("Editing");
+}
+
+preview.addEventListener("click", e => {
+
+    if (e.target.closest("a")) return;
+
+    openEditor();
+});
+
+
+/* KEYBOARD-AWARE TOOLBAR */
+
+const visual = window.visualViewport;
+
+function updateToolbarPosition() {
+
+    if (!visual) return;
+
+    const keyboardOpen =
+        document.activeElement === editor;
+
+    const height = keyboardOpen
+        ? Math.max(
+            0,
+            window.innerHeight -
+            visual.height -
+            visual.offsetTop
+        )
+        : 0;
+
+    document.documentElement.style.setProperty(
+        "--keyboard-height",
+        height + "px"
+    );
+}
+
+editor.addEventListener("focus", updateToolbarPosition);
+
+editor.addEventListener("blur", () => {
+    setTimeout(updateToolbarPosition, 100);
+});
+
+if (visual) {
+    visual.addEventListener("resize", updateToolbarPosition);
+    visual.addEventListener("scroll", updateToolbarPosition);
+}
+
+window.addEventListener("resize", updateToolbarPosition);
+
+
+/* TOOLBAR GESTURES */
+
+let gesture = null;
+
+const LONG_PRESS = 300;
+const DOWN_DISTANCE = 50;
+const UP_DISTANCE = 35;
+
+toolbar.addEventListener("contextmenu", e => {
+    e.preventDefault();
+});
+
+toolbar.addEventListener("pointerdown", e => {
+
+    if (e.pointerType === "mouse") return;
+
+    const button = e.target.closest(".tool");
+
+    if (!button) return;
+
+    e.preventDefault();
+
+    gesture = {
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        time: Date.now(),
+        action: button.dataset.action
+    };
+
+    try {
+        toolbar.setPointerCapture(e.pointerId);
+    } catch(err) {}
+
+});
+
+
+toolbar.addEventListener("pointerup", e => {
+
+    if (!gesture || gesture.id !== e.pointerId) return;
+
+    const g = gesture;
+    gesture = null;
+
+    const dx = Math.abs(e.clientX - g.x);
+    const dy = e.clientY - g.y;
+    const duration = Date.now() - g.time;
+
+    if (dx > 65) return;
+
+
+    /* LONG PRESS + DOWN SWIPE = PREVIEW */
+
+    if (
+        duration >= LONG_PRESS &&
+        dy >= DOWN_DISTANCE
+    ) {
+
+        editor.blur();
+
+        if (!previewMode) togglePreview();
+
+        return;
+    }
+
+
+    /* SWIPE UP = LINE FORMATTING OR TABLE PICKER */
+
+    if (dy <= -UP_DISTANCE) {
+
+        if (
+            ["bold", "italic", "strike"].includes(g.action)
+        ) {
+            swipeFormat(g.action);
+            return;
+        }
+
+        if (g.action === "table") {
+            openTablePicker();
+            return;
+        }
+    }
+
+
+    /* NORMAL TAP */
+
+    if (
+        duration < LONG_PRESS &&
+        Math.abs(dy) < 15
+    ) {
+
+        switch (g.action) {
+
+            case "bold":
+            case "italic":
+            case "strike":
+                clickFormat(g.action);
+                break;
+
+            case "heading":
+                heading();
+                break;
+
+            case "code":
+                code();
+                break;
+
+            case "codeblock":
+                codeBlock();
+                break;
+
+            case "link":
+                insertLink();
+                break;
+
+            case "table":
+                createTable(2, 2);
+                break;
+        }
+    }
+
+});
+
+toolbar.addEventListener("pointercancel", () => {
+    gesture = null;
+});
+
+
+/* MENU */
+
+function toggleMenu() {
+    menu.style.display =
+        menu.style.display === "block"
+        ? "none"
+        : "block";
+}
+
+document.getElementById("menuBtn").onclick = toggleMenu;
+
+document.addEventListener("click", e => {
+
+    if (
+        !menu.contains(e.target) &&
+        e.target.id !== "menuBtn"
+    ) {
+        menu.style.display = "none";
+    }
+});
+
+
+/* HEADER BUTTONS */
+
+document.getElementById("previewBtn").onclick = togglePreview;
+document.getElementById("undoBtn").onclick = undo;
+document.getElementById("redoBtn").onclick = redo;
+document.getElementById("saveBtn").onclick = save;
+
+document.getElementById("backBtn").onclick = () => {
+    if (previewMode) openEditor();
+    else newNote();
+};
+
+
+/* NEW NOTE */
+
+function newNote() {
+
+    if (!confirm("Start a new note?")) return;
+
+    editor.value = "";
+    title.value = "Untitled note";
+
+    if (previewMode) openEditor();
+
+    save();
+}
+
+
+/* CLEAR */
+
+function clearNote() {
+
+    if (!confirm("Clear this note?")) return;
+
+    editor.value = "";
+
+    savedStart = savedEnd = 0;
+
+    autoSave();
+}
+
+
+/* DOWNLOAD */
+
+function download(filename, content, type) {
+
+    const blob = new Blob(
+        [content],
+        {type: type}
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = filename;
+
+    a.click();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+
+function downloadMD() {
+
+    download(
+        (title.value || "note") + ".md",
+        editor.value,
+        "text/markdown;charset=utf-8"
+    );
+}
+
+
+function downloadHTML() {
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>${escapeHTML(title.value)}</title>
+</head>
+<body>
+${renderMarkdown(editor.value)}
+</body>
+</html>`;
+
+    download(
+        (title.value || "note") + ".html",
+        html,
+        "text/html;charset=utf-8"
+    );
+}
+
+
+/* MENU ACTIONS */
+
+menu.addEventListener("click", e => {
+
+    const action = e.target.dataset.menu;
+
+    if (!action) return;
+
+    menu.style.display = "none";
+
+    if (action === "new") newNote();
+    if (action === "clear") clearNote();
+    if (action === "md") downloadMD();
+    if (action === "html") downloadHTML();
+});
+
+
+/* INITIALIZE */
+
+buildGrid();
+updateToolbarPosition();
+
+</script>
+
 </body>
 </html>
